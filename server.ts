@@ -3,6 +3,7 @@ import http from 'http';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import process from 'node:process';
 import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
@@ -34,6 +35,11 @@ function getGeminiClient(): GoogleGenAI | null {
     });
   }
   return aiClient;
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
 }
 
 // Health & Connector Status
@@ -83,7 +89,7 @@ Adopt all user training rules, domain standards, and custom personas provided be
     }
 
     // Format chat contents if history is provided
-    let contents: any = message;
+    let contents: string | Array<{ role: string; parts: Array<{ text: string }> }> = message;
     if (Array.isArray(history) && history.length > 0) {
       const recentHistory = history.slice(-8).map((h: { role: string; content: string }) => ({
         role: h.role === 'assistant' ? 'model' : 'user',
@@ -112,11 +118,11 @@ Adopt all user training rules, domain standards, and custom personas provided be
       model: chosenModel,
       timestamp: Date.now(),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Gemini API Error:', error);
     return res.status(500).json({
       error: 'GEMINI_ERROR',
-      message: error?.message || 'Error communicating with Gemini Cloud AI',
+      message: getErrorMessage(error) || 'Error communicating with Gemini Cloud AI',
     });
   }
 });
@@ -161,7 +167,7 @@ app.post('/api/connectors/dispatch', async (req, res) => {
 
     const latencyMs = Date.now() - startTime;
     const responseContentType = response.headers.get('content-type') || '';
-    let responseData: any;
+    let responseData: unknown;
 
     if (responseContentType.includes('application/json')) {
       responseData = await response.json();
@@ -176,11 +182,11 @@ app.post('/api/connectors/dispatch', async (req, res) => {
       latencyMs,
       data: responseData,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return res.status(502).json({
       ok: false,
       error: 'CONNECTOR_DISPATCH_FAILED',
-      message: err?.message || 'Failed to reach external connector target',
+      message: getErrorMessage(err) || 'Failed to reach external connector target',
     });
   }
 });
@@ -207,10 +213,10 @@ app.post('/api/connectors/ping', async (req, res) => {
       statusCode: resp.status,
       latencyMs: Date.now() - startTime,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     res.json({
       online: false,
-      error: err?.message || 'Host unreachable',
+      error: getErrorMessage(err) || 'Host unreachable',
       latencyMs: -1,
     });
   }
@@ -244,7 +250,7 @@ async function startServer() {
   });
 }
 
-startServer().catch((err) => {
+startServer().catch((err: unknown) => {
   console.error('Fatal server boot error:', err);
   process.exit(1);
 });
