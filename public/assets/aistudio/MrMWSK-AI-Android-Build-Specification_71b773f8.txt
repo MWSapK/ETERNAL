@@ -1,0 +1,273 @@
+MrMWSK’s AI ANDROID STUDIO BUILD SPECIFICATION Adaptive, modular,
+offline-first and hybrid Android AI assistant
+
+PURPOSE Build a real native Android application named MrMWSK’s AI. This
+is not a mockup, static interface, WebView-only wrapper, or placeholder
+prototype. The finished app must install, run a real local AI model, and
+provide working features.
+
+PRODUCT VISION The app starts lightweight and expands according to the
+user’s preferences, hardware, storage, network access and requested
+capabilities. It works offline for installed local features after
+models/assets are downloaded. Online AI is optional and requires
+informed user consent.
+
+IMPORTANT: ADAPT, DO NOT SECRETLY TRAIN Personalization means learning
+user-approved settings locally: preferred language, response length,
+tone, model, tools, accessibility settings and explicitly saved
+memories. Do not claim to retrain foundation-model weights. Use local
+preferences, prompt profiles and retrieval. Any future fine-tuning must
+be separately explained, optional and user-controlled.
+
+TECHNOLOGY - Kotlin, Jetpack Compose, MVVM / Clean Architecture. -
+Gradle Kotlin DSL and version catalog. - Room for conversations,
+documents and memories. - DataStore for preferences. - WorkManager for
+resumable model downloads and maintenance. - Android Keystore for
+encryption keys/secrets. - Storage Access Framework for user-selected
+files. - App-private storage for models and private data. - Minimum SDK
+chosen after verifying runtime/dependency compatibility. - Target the
+current Google Play API requirement at release; for this November 2026
+brief, plan for API 36 or the then-current requirement and verify before
+submission. - Do not bundle large AI models in the base APK.
+
+SUGGESTED MODULAR PROJECT :app :core:common :core:designsystem
+:core:database :core:datastore :core:security :core:deviceprofile
+:core:permissions :core:network :ai:contracts :ai:router :ai:runtime-api
+:ai:runtime-llamacpp :ai:model-catalog :ai:model-downloader
+:ai:conversation :ai:memory :feature:chat :feature:writer
+:feature:reader :feature:vision :feature:voice :feature:translator
+:feature:coder :feature:tools :feature:settings :feature:diagnostics
+:feature:onlineproviders
+
+Optional modules must be independently testable and gracefully report
+when not installed, when a model is missing, when permission is missing,
+or when the device is unsupported. For the first release, feature code
+may ship in the app while models/assets remain separately downloadable.
+Clearly distinguish disabling a feature from uninstalling its code.
+
+ADAPTIVE DEVICE ENGINE On first launch, perform a short transparent
+capability assessment. Do not run an extended stress test without
+consent. Detect best-effort: - Android version/API and device ABI. -
+Total RAM, memory class and currently available memory. - Available
+internal storage. - CPU architecture and supported instruction sets
+where safely detectable. - Acceleration support only through actual
+runtime capability checks. Never assume Vulkan, NNAPI, GPU delegate or
+WebGPU support merely because the device runs Android. - Thermal status
+through supported Android APIs. - Battery/charging state for long
+tasks. - Network and metered connection state. - Permissions and feature
+availability. - Model compatibility: architecture, quantization, context
+length, runtime version, ABI and memory recommendation.
+
+Create a DeviceProfile service. Unknown hardware must never crash the
+app. Provide: 1. Adaptive (recommended): choose safe model/settings
+within user limits. 2. Lite: prioritize low memory, speed, battery and
+storage. 3. Power: permit larger models and longer context with clear
+warnings. 4. Custom: user-controlled limits.
+
+Configurable limits: maximum model download size, model storage budget,
+minimum free storage, conservative inference RAM budget, battery saver,
+processing while charging, metered downloads, maximum context length,
+online AI permission and background downloads.
+
+Do not use simplistic RAM=model-size calculations. Account for runtime
+overhead, KV cache, context length, tokenizer, multimodal components,
+concurrent work and Android system memory. Use model-provider
+recommendations and conservative safety margins. Offer a small-model
+fallback.
+
+MODEL CATALOG AND MANAGER Each model entry must include publisher, exact
+revision, format (e.g. GGUF), quantization, parameter size, file size,
+context limit, supported runtime/ABI, memory/storage recommendations,
+supported tasks, languages, limitations, license, attribution, source
+and SHA-256 checksum. Functions: browse/filter compatible models;
+explain compatibility; download with progress/pause/resume/cancel/retry;
+verify checksum; install/activate/unload/switch/delete; show storage
+usage; handle corrupted downloads, incompatibility and low storage.
+Never download silently or accept arbitrary model URLs from prompts. Do
+not bundle large models in the APK.
+
+LOCAL INFERENCE Evaluate a stable Android-native runtime. Use llama.cpp
+Android integration for GGUF as the primary candidate for local text
+inference, behind an interface so it can be replaced. Interface should
+support initialize, generate/stream, cancel, capabilities, unload and
+close. - Inference must not block the UI thread. - Support streaming and
+cancellation. - Configure context length and supported sampling
+parameters. - Avoid multiple large models loaded simultaneously unless
+profile permits. - Release native memory safely. - Handle OOM, thermal
+throttling, runtime crashes and model-load errors. - Include a real
+smoke-test prompt and diagnostics benchmark. - Never claim acceleration
+unless confirmed by runtime. - Optional LiteRT or other runtimes must be
+capability-gated and not mandatory.
+
+AI ROUTER AND HYBRID MODES All features call a central AI Router rather
+than hard-coding providers. Modes: - Offline Only: no AI network
+requests. - Smart Hybrid: local by default; cloud only if enabled and
+approved. - Online Preferred: cloud may be preferred if enabled; local
+fallback remains. Routing checks privacy policy, installed local model,
+memory/thermal/battery limits, and provider consent. If local inference
+is unsuitable, offer a smaller local model, a model download, or an
+enabled online provider. Label every response Local or Online. Never
+silently upload chat, documents, images or memories. In airplane mode,
+do not repeatedly retry network calls.
+
+ONLINE PROVIDERS Use provider abstraction. Never ship developer-owned
+secret API keys in the APK. Protect user keys, disclose possible
+provider charges and data processing, show provider/content scope before
+first use, support disconnect/delete, timeouts, rate limits and
+cancellation. Online mode must not be required for core use.
+
+USER PREFERENCES AND MEMORY Store user-approved response length, tone,
+language, preferred model/mode, favourite tools, accessibility choices
+and document preferences. Ask before saving personal facts. Show saved
+memories and why they were saved. Allow edit/export/pause/clear/delete.
+Keep personalization local. Never infer sensitive traits. Do not use
+private content to train models or send to servers without separate
+explicit consent. Offer temporary chat with no history/memory writes and
+reset-to-default controls.
+
+FEATURES 1. CHAT: multiple conversations, streaming, cancel/regenerate,
+copy/share/export, prompt profiles, context management, clear notice
+when context is summarized or truncated. 2. WRITER:
+draft/rewrite/summarize/expand/shorten/proofread/outline/brainstorm/email/social
+copy; preserve original until user accepts; export TXT/Markdown. 3.
+READER: import PDF/TXT/Markdown/DOCX/EPUB where reliable parsers exist;
+extract and chunk locally; answer with page/section citations; report
+scanned PDFs requiring OCR; progress/cancel; delete derived indexes with
+document. 4. MEMORY: Room storage, full-text search, optional local
+embeddings, retrieval transparency, edit/pin/export/delete. 5. VISION:
+user-selected/captured images, OCR baseline, optional local
+vision-language model, adaptive resizing, local by default. 6. VOICE:
+push-to-talk first; local speech-to-text where compatible; disclose if
+Android speech service may use network; local TTS where available;
+microphone indicator and stop/cancel; no always-on listening by default.
+7. TRANSLATOR: language selection, local models/APIs where supported,
+clearly list supported language pairs. 8. CODER: code
+generation/explanation, syntax highlighting, copy/export, sandboxed HTML
+preview; never auto-run shell commands or install packages. 9. TOOLS:
+summarizer, grammar, OCR, text extraction, note organizer and
+deterministic utilities. Use normal code for calculations instead of LLM
+when possible. 10. AGENT: begin with allowlisted actions such as local
+notes, document search, in-app reminders and preparing drafts. Show
+proposed action and require confirmation before device/external impact.
+No hidden surveillance, unrestricted file access, arbitrary command
+execution or silent messaging. Maintain inspectable action log.
+
+RESOURCE MANAGER Observe memory pressure, app lifecycle, thermal state,
+battery saver and free storage. Reduce context/concurrency when
+constrained; unload inactive models; pause nonessential
+downloads/indexing during heat or low battery; choose smaller models if
+necessary; reduce image size/batch size; avoid running inference, OCR,
+indexing and downloads concurrently when resources are constrained;
+resume only when safe and allowed. Explain automatic changes. Never
+delete user documents/models automatically or override OS settings. Do
+not promise 100% hardware utilization. “Maximum beneficial performance”
+means best stable performance within safe thermal, memory, battery and
+user limits.
+
+UI Use exact branding “MrMWSK’s AI”. Navigation: Home, Chat, Tools,
+Library, Models, Settings. Home: new chat, current model and
+Local/Online status, quick actions, download status,
+Adaptive/Lite/Power/Custom mode, storage shortcut. Settings: AI
+mode/provider privacy, performance profile, model manager, memory,
+downloads/storage, permissions, accessibility, diagnostics, licenses and
+privacy. Provide dark/light themes, responsive phone/tablet layouts,
+accessible labels, scalable text, sufficient contrast, and real
+loading/empty/error/offline/unsupported states. No decorative buttons
+that do nothing.
+
+DATA Room entities: Conversation, Message, ModelInstallation, Document,
+DocumentChunk, MemoryItem, UserPreference, ToolActionLog and
+DownloadTask. Store provider configuration metadata separately from
+secrets. Use migrations. Decide and document Android backup exclusions
+for private conversations, models and credentials.
+
+SECURITY Least-privilege permissions. App-private storage.
+Keystore-backed keys. HTTPS. Verify model checksums/catalog provenance.
+Treat imported document text as untrusted data, not instructions to the
+app. Do not execute document/model instructions. Strict WebView sandbox
+for code preview. No hard-coded API secrets, silent uploads or
+background recording. Privacy policy and Data safety declarations must
+reflect actual behavior.
+
+ACCESSIBILITY English initially, architect for localization, Unicode and
+RTL. Support font scaling, screen readers, contrast, and user-selected
+AI output language. No feature should require voice as the only
+interaction method.
+
+TESTING Unit tests: device profile/resource policy, model compatibility,
+routing/consent, memory/preferences, document chunking/citations,
+checksum validation and action authorization. Integration tests:
+download/verify/load/generate/unload; streaming/cancel; database
+migrations; document import/delete; offline-only routing; hybrid
+consent; corrupt model; failed download; low storage; OOM. Physical
+device tests: low-, mid- and high-resource devices; supported ABIs;
+airplane mode after model setup; battery saver; thermal throttling;
+process death/restore; low storage. Measure cold load, first-token
+latency, tokens/sec, peak memory, storage, battery and thermal behavior.
+Do not invent benchmark claims. Diagnostics must be opt-in where they
+could expose personal/device information.
+
+GOOGLE PLAY RELEASE Produce debug APK, signed release APK for direct
+testing, and signed AAB. Keep signing keys out of source control. Verify
+current target API requirement immediately before submission. Complete
+privacy policy, Data safety, content rating, store listing and app
+access accurately. Check every model’s license and attribution. Use
+staged rollout.
+
+IMPLEMENTATION MILESTONES 0. Inspect all supplied ZIPs, HTML, source and
+assets. Report what works, what is UI-only and what can be reused. Do
+not assume WebLLM is a native Android runtime. 1. Create a clean,
+compilable native Kotlin/Compose project with navigation, theme, Room,
+DataStore, permissions and diagnostics. 2. Integrate one small
+compatible local text model. Deliver real on-device inference, streaming
+and chat. 3. Implement model manager, verified downloads,
+Adaptive/Lite/Power profiles, resource management and airplane-mode
+verification. 4. Implement local document reader, chunking, retrieval
+and memory. 5. Add optional cloud providers with explicit consent and
+Local/Online labels. 6. Add voice, vision, translator, coder and
+controlled agent one at a time, only after runtime/model support is
+verified. 7. Device testing, optimization, privacy review, signing and
+Play Store preparation.
+
+DEFINITION OF DONE [ ] Project opens/syncs in Android Studio. [ ] Clean
+Gradle build succeeds. [ ] APK installs and launches on a physical
+Android device. [ ] Real local model loads and generates responses. [ ]
+Core chat works in airplane mode after model setup. [ ] Lite mode works
+on the declared minimum device class. [ ] Adaptive chooses compatible
+settings and explains them. [ ] Power mode warns about resources and is
+stable on supported devices. [ ] Users can add/disable/remove optional
+capabilities. [ ] Model downloads verify checksums and recover from
+interruption. [ ] Documents process locally by default. [ ] Online
+requests follow explicit consent. [ ] No fake buttons, placeholder
+answers or simulated AI. [ ] No unverified claims about
+acceleration/offline support. [ ] Tests cover cancellation, low
+memory/storage and thermal pressure. [ ] Signed APK and AAB generated
+and release checks pass. [ ] Privacy policy, licenses and Play
+declarations match actual behavior.
+
+INSTRUCTIONS TO ANDROID STUDIO AI / CODING AGENT 1. Read this entire
+specification before coding. 2. Inspect all supplied archives, HTML,
+source, assets and current project configuration. Report what is
+functional, UI-only, reusable or obsolete. 3. Work only in the
+explicitly selected MrMWSK’s AI project. Do not modify unrelated
+projects or repositories. 4. First report architecture/file plan,
+dependency compatibility, runtime choice, minimum device assumptions and
+risks. 5. Then implement in small buildable milestones. Run Gradle build
+and relevant tests after each milestone; fix errors before proceeding.
+6. Pin compatible dependency versions and verify official documentation
+and licenses. Do not invent APIs or version numbers. 7. Do not generate
+a giant placeholder project. Implement real functionality and tests. 8.
+Mark anything unavailable or untested as NOT IMPLEMENTED or NOT
+VERIFIED. 9. Never claim physical-device testing unless actually
+performed. 10. Keep README build instructions current for debug APK,
+signed release APK and AAB. 11. Ask only for decisions that genuinely
+block implementation. Use safe configurable defaults otherwise. 12.
+Preserve the brand spelling exactly: “MrMWSK’s AI”.
+
+EXPECTED FIRST RESPONSE Before modifying files, report: - Files
+inspected. - Reusable existing functions/assets. - Proposed modules and
+dependencies. - Selected local inference runtime and reason. - Minimum
+Android/API/ABI support and model-size strategy. - Risks and features
+requiring separate models. - First milestone and exact acceptance tests.
+Then begin Milestone 1 if the environment can implement and build it. Do
+not stop at a plan.

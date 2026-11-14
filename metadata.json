@@ -1,0 +1,6 @@
+{
+  "name": "MrMWSK's Ai",
+  "description": "Autonomous offline-first AI assistant with local intelligence, optional cloud reasoning, and extensible app connectors.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
